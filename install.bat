@@ -1,12 +1,27 @@
 @echo off
 chcp 65001 > nul
-title Discord Auto-Translator Installer
+title Мастер установки и удаления Переводчика Discord
 
 echo ====================================================
-echo   Discord Desktop Universal Auto-Translator Installer
+echo   Discord Auto-Translator Setup / Uninstaller
 echo ====================================================
 echo.
+echo  [1] Установить / Обновить переводчик
+echo  [2] Полностью удалить переводчик из Discord
+echo.
+set /p choice="Выберите действие (1 или 2): "
 
+if "%choice%"=="2" (
+    echo.
+    echo Запуск удаления...
+    node "%~dp0uninstall.js"
+    echo.
+    pause
+    exit /b
+)
+
+echo.
+echo Запуск установки...
 node "%~dp0patchDiscordCore.js"
 
 if %ERRORLEVEL% NEQ 0 (
