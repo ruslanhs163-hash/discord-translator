@@ -1,4 +1,4 @@
-# PowerShell Universal Installer for Discord Auto-Translator
+# PowerShell Standalone Installer for Discord Auto-Translator
 $ErrorActionPreference = "Stop"
 
 Write-Host "====================================================" -ForegroundColor Cyan
@@ -17,7 +17,11 @@ $pluginCode = [System.IO.File]::ReadAllText($sourceFile, [System.Text.Encoding]:
 $injectionHeader = "/* --- DISCORD AUTO TRANSLATOR NATIVE INJECTOR --- */"
 $encodedJS = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pluginCode))
 
-$nativeCode = @"
+# Идеальная структура index.js с гарантированным экспортом core.startup
+$indexJsCode = @"
+const core = require('./core.asar');
+module.exports = core;
+
 $injectionHeader
 try {
   const electron = require('electron');
@@ -82,7 +86,6 @@ try {
 }
 "@
 
-# Все возможные пути установки Discord на Windows
 $searchFolders = @(
     "$env:LOCALAPPDATA\Discord",
     "$env:APPDATA\Discord",
@@ -105,21 +108,12 @@ foreach ($folder in $searchFolders) {
 
 if (-not $discordCorePaths) {
     Write-Host "[ERROR] Discord Desktop installation not found on this PC!" -ForegroundColor Red
-    Write-Host "Please make sure official Discord Desktop is installed." -ForegroundColor Yellow
     Exit 1
 }
 
 $patchedCount = 0
 foreach ($coreFile in $discordCorePaths) {
-    $content = [System.IO.File]::ReadAllText($coreFile.FullName, [System.Text.Encoding]::UTF8)
-
-    if ($content.Contains($injectionHeader)) {
-        $parts = $content -split [regex]::Escape($injectionHeader)
-        $content = $parts[0]
-    }
-
-    $newContent = $nativeCode + "`r`n`r`n" + $content
-    [System.IO.File]::WriteAllText($coreFile.FullName, $newContent, [System.Text.Encoding]::UTF8)
+    [System.IO.File]::WriteAllText($coreFile.FullName, $indexJsCode, [System.Text.Encoding]::UTF8)
     $patchedCount++
     Write-Host "[SUCCESS] Patched Discord Core: $($coreFile.FullName)" -ForegroundColor Green
 }
