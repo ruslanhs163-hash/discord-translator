@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Discord Desktop Auto-Translator Full Embed & Bot Support
+// @name         Discord Desktop Auto-Translator Top-Bar Badge
 // @namespace    http://tampermonkey.net/
-// @version      5.1.0
-// @description  Бесшовный переводчик с полной поддержкой Discord Bot Embeds, карточек, правил и системных объявлений
+// @version      5.2.0
+// @description  Бесшовный переводчик с гарантированным прикреплением к document.documentElement
 // ==/UserScript==
 
 (function() {
@@ -11,7 +11,7 @@
     if (window.__DISCORD_TRANSLATOR_ACTIVE__) return;
     window.__DISCORD_TRANSLATOR_ACTIVE__ = true;
 
-    console.log('[Discord Translator] Запуск модуля с полной поддержкой Discord Bot Embeds...');
+    console.log('[Discord Translator] Инициализация модуля с привязкой к documentElement...');
 
     let isEnabled = localStorage.getItem('discord_translator_enabled') !== 'false';
 
@@ -92,7 +92,7 @@
     }
 
     /**
-     * Плавающая кнопка переключателя
+     * Гарантированная плавающая кнопка в правом верхнем углу (Привязка к document.documentElement)
      */
     function renderFloatingButton() {
         let btn = document.getElementById('discord-translator-floating-btn');
@@ -104,8 +104,8 @@
             btn.style.cssText = `
                 position: fixed !important;
                 top: 8px !important;
-                right: 280px !important;
-                z-index: 999999999 !important;
+                right: 180px !important;
+                z-index: 2147483647 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -116,7 +116,7 @@
                 font-weight: bold !important;
                 cursor: pointer !important;
                 user-select: none !important;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.6) !important;
                 transition: all 0.2s ease !important;
                 -webkit-app-region: no-drag !important;
                 pointer-events: auto !important;
@@ -140,7 +140,10 @@
             btn.addEventListener('click', toggleState, true);
             btn.addEventListener('mousedown', (e) => e.stopPropagation(), true);
 
-            (document.body || document.documentElement).appendChild(btn);
+            const root = document.documentElement || document.body;
+            if (root) {
+                root.appendChild(btn);
+            }
         }
 
         function updateBtnState() {
@@ -162,7 +165,7 @@
     }
 
     /**
-     * РЕКУРСИВНЫЙ ПЕРЕВОД УЗЛОВ ТЕКСТА (Сохраняет 100% HTML, разметку и стили Discord)
+     * РЕКУРСИВНЫЙ ПЕРЕВОД УЗЛОВ ТЕКСТА
      */
     async function translateTextNodes(node) {
         if (!node) return;
@@ -194,9 +197,6 @@
         }
     }
 
-    /**
-     * Сканирование элементов сообщений, карточек и Embeds
-     */
     function processMessageContainer(el) {
         if (!isEnabled) return;
         if (!el || el.dataset.autoTranslated) return;
@@ -215,7 +215,6 @@
 
         if (!isEnabled) return;
 
-        // Расширенные селекторы текста сообщений, карточек ботов (Embeds), правил и объявлений
         const selectors = [
             '[class*="messageContent"]',
             '[id^="message-content-"]',
@@ -236,8 +235,8 @@
         }
     }
 
-    setInterval(scanAndTranslate, 800);
+    setInterval(scanAndTranslate, 500);
     scanAndTranslate();
 
-    console.log(`[Discord Translator] Модуль Embeds и карточек ботов запущен! Язык: ${userTargetLang.toUpperCase()}`);
+    console.log(`[Discord Translator] Плашка 100% привязана к documentElement!`);
 })();
