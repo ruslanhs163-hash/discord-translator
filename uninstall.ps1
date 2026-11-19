@@ -5,8 +5,6 @@ Write-Host "====================================================" -ForegroundCol
 Write-Host "  Discord Auto-Translator Uninstaller (Windows)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
 
-$injectionHeader = "/* --- DISCORD AUTO TRANSLATOR NATIVE INJECTOR --- */"
-
 $searchFolders = @(
     "$env:LOCALAPPDATA\Discord",
     "$env:APPDATA\Discord",
@@ -29,22 +27,14 @@ foreach ($folder in $searchFolders) {
 
 $uninstalledCount = 0
 foreach ($coreFile in $discordCorePaths) {
-    $content = [System.IO.File]::ReadAllText($coreFile.FullName, [System.Text.Encoding]::UTF8)
-
-    if ($content.Contains($injectionHeader)) {
-        $parts = $content -split [regex]::Escape($injectionHeader)
-        $cleanContent = $parts[0].Trim()
-        if ([string]::IsNullOrWhiteSpace($cleanContent)) {
-            $cleanContent = "module.exports = require('./core.asar');"
-        }
-        [System.IO.File]::WriteAllText($coreFile.FullName, $cleanContent, [System.Text.Encoding]::UTF8)
-        $uninstalledCount++
-        Write-Host "[SUCCESS] Restored Discord Core: $($coreFile.FullName)" -ForegroundColor Green
-    }
+    $cleanContent = "module.exports = require('./core.asar');`r`n"
+    [System.IO.File]::WriteAllText($coreFile.FullName, $cleanContent, [System.Text.Encoding]::UTF8)
+    $uninstalledCount++
+    Write-Host "[SUCCESS] Restored Clean Discord Core: $($coreFile.FullName)" -ForegroundColor Green
 }
 
 Write-Host ""
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host "[SUCCESS] Uninstallation Complete! ($uninstalledCount Discord core modules restored)" -ForegroundColor Green
+Write-Host "[SUCCESS] Uninstallation Complete! ($uninstalledCount Discord core modules restored to stock)" -ForegroundColor Green
 Write-Host "Instructions: Open Discord Desktop and press Ctrl + R!" -ForegroundColor Yellow
 Write-Host "====================================================" -ForegroundColor Cyan

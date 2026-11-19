@@ -1,4 +1,4 @@
-# PowerShell Standalone Installer for Discord Auto-Translator
+# PowerShell Universal Installer for Discord Auto-Translator
 $ErrorActionPreference = "Stop"
 
 Write-Host "====================================================" -ForegroundColor Cyan
@@ -17,10 +17,9 @@ $pluginCode = [System.IO.File]::ReadAllText($sourceFile, [System.Text.Encoding]:
 $injectionHeader = "/* --- DISCORD AUTO TRANSLATOR NATIVE INJECTOR --- */"
 $encodedJS = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pluginCode))
 
-# Идеальная структура index.js с гарантированным экспортом core.startup
+# Инициализация index.js: Сначала строгий экспорт ядра Discord, затем фоновый инжектор
 $indexJsCode = @"
-const core = require('./core.asar');
-module.exports = core;
+module.exports = require('./core.asar');
 
 $injectionHeader
 try {
@@ -107,7 +106,7 @@ foreach ($folder in $searchFolders) {
 }
 
 if (-not $discordCorePaths) {
-    Write-Host "[ERROR] Discord Desktop installation not found on this PC!" -ForegroundColor Red
+    Write-Host "[ERROR] Discord Desktop installation not found!" -ForegroundColor Red
     Exit 1
 }
 
