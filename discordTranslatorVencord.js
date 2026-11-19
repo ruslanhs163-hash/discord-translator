@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Discord Desktop Auto-Translator Universal Global Edition
+// @name         Discord Desktop Auto-Translator Font & Format Preserving Edition
 // @namespace    http://tampermonkey.net/
-// @version      4.0.0
-// @description  Глобальный международный авто-переводчик с автоматическим определением родного языка пользователя
+// @version      5.0.0
+// @description  Бесшовный переводчик с 100% сохранением шрифтов, жирного текста, заголовков, ссылок и разметки Discord
 // ==/UserScript==
 
 (function() {
@@ -11,22 +11,18 @@
     if (window.__DISCORD_TRANSLATOR_ACTIVE__) return;
     window.__DISCORD_TRANSLATOR_ACTIVE__ = true;
 
-    console.log('[Discord Translator] Запуск международного авто-переводчика...');
+    console.log('[Discord Translator] Запуск модуля с 100% сохранением шрифтов и разметки...');
 
     let isEnabled = localStorage.getItem('discord_translator_enabled') !== 'false';
 
-    // 1. Авто-определение родного языка ПК/браузера пользователя (ru, fr, de, es, en, ja и т.д.)
     let userTargetLang = localStorage.getItem('discord_translator_target_lang');
     if (!userTargetLang) {
         userTargetLang = (navigator.language || navigator.userLanguage || 'ru').split('-')[0].toLowerCase();
     }
 
     const translationCache = new Map();
-    const MAX_CACHE_SIZE = 3000;
+    const MAX_CACHE_SIZE = 4000;
 
-    /**
-     * Проверка, написан ли текст уже на родном языке пользователя
-     */
     function isNativeUserLanguageText(text, userLang = userTargetLang) {
         if (!text || typeof text !== 'string') return false;
 
@@ -37,7 +33,6 @@
             return (cyrillicMatches.length / letterMatches.length) > 0.2;
         }
 
-        // Для латиницы (en, fr, de, es, it)
         if (['en', 'fr', 'de', 'es', 'it', 'pt'].includes(userLang)) {
             const latinMatches = text.match(/[a-zA-Z\u00C0-\u024F]/g) || [];
             const allLetters = text.match(/[\p{L}]/gu) || [];
@@ -167,60 +162,55 @@
     }
 
     /**
-     * Перевод сообщений на родной язык пользователя
+     * РЕКУРСИВНЫЙ ПЕРЕВОД УЗЛОВ ТЕКСТА (Сохраняет 100% HTML, шрифты, жирность, ссылки и упоминания!)
      */
-    async function processElement(el) {
+    async function translateTextNodes(node) {
+        if (!node) return;
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = node.nodeValue ? node.nodeValue.trim() : '';
+            if (!text || isNativeUserLanguageText(text)) return;
+
+            // Запрет перевода системных атрибутов
+            if (node.parentElement && (
+                node.parentElement.tagName === 'SCRIPT' ||
+                node.parentElement.tagName === 'STYLE' ||
+                node.parentElement.tagName === 'CODE' ||
+                node.parentElement.classList.contains('mention') ||
+                node.parentElement.classList.contains('emoji') ||
+                node.parentElement.getAttribute('contenteditable') === 'true'
+            )) return;
+
+            const translated = await requestTranslation(text, userTargetLang, 'auto');
+            if (translated && translated !== text && node.nodeValue.trim() === text) {
+                node.nodeValue = node.nodeValue.replace(text, translated);
+            }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Пропускаем поля ввода и упоминания
+            if (node.getAttribute('contenteditable') === 'true' || node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') return;
+            if (node.classList && (node.classList.contains('mention') || node.classList.contains('emoji'))) return;
+
+            for (const child of node.childNodes) {
+                translateTextNodes(child);
+            }
+        }
+    }
+
+    /**
+     * Сканирование элементов сообщений
+     */
+    function processMessageContainer(el) {
         if (!isEnabled) return;
         if (!el || el.dataset.autoTranslated) return;
 
-        if (el.getAttribute('contenteditable') === 'true' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return;
-
-        const originalText = el.innerText ? el.innerText.trim() : '';
-        if (!originalText || isNativeUserLanguageText(originalText)) {
-            el.dataset.autoTranslated = 'skip';
-            return;
-        }
-
         el.dataset.autoTranslated = 'processing';
 
-        try {
-            const translatedText = await requestTranslation(originalText, userTargetLang, 'auto');
-            if (translatedText && translatedText !== originalText) {
-                el.dataset.originalText = originalText;
-                el.dataset.translatedText = translatedText;
-
-                const langBadgeText = userTargetLang.toUpperCase();
-                const badge = document.createElement('span');
-                badge.innerText = langBadgeText;
-                badge.title = 'Click to show original message';
-                badge.style.cssText = 'background: rgba(88, 101, 242, 0.3) !important; color: #5865F2 !important; padding: 2px 6px !important; border-radius: 4px !important; font-size: 11px !important; margin-left: 6px !important; cursor: pointer !important; user-select: none !important; font-weight: bold !important; display: inline-block !important; vertical-align: middle !important; -webkit-app-region: no-drag !important; pointer-events: auto !important;';
-
-                let showingOriginal = false;
-                badge.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    showingOriginal = !showingOriginal;
-
-                    const textNode = el.firstChild;
-                    if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-                        textNode.nodeValue = (showingOriginal ? originalText : translatedText) + ' ';
-                    } else {
-                        el.innerText = (showingOriginal ? originalText : translatedText) + ' ';
-                        el.appendChild(badge);
-                    }
-                    badge.innerText = showingOriginal ? 'ORIGINAL' : langBadgeText;
-                    badge.style.color = showingOriginal ? '#faa81a' : '#5865F2';
-                }, true);
-
-                el.innerText = translatedText + ' ';
-                el.appendChild(badge);
-                el.dataset.autoTranslated = 'true';
-            } else {
-                el.dataset.autoTranslated = 'done';
-            }
-        } catch (err) {
+        // Переводим текстовые узлы с сохранением оригинальных тегов HTML
+        translateTextNodes(el).then(() => {
+            el.dataset.autoTranslated = 'true';
+        }).catch(() => {
             el.dataset.autoTranslated = 'error';
-        }
+        });
     }
 
     function scanAndTranslate() {
@@ -238,12 +228,12 @@
 
         const elements = document.querySelectorAll(selectors.join(', '));
         for (const el of elements) {
-            processElement(el);
+            processMessageContainer(el);
         }
     }
 
     setInterval(scanAndTranslate, 800);
     scanAndTranslate();
 
-    console.log(`[Discord Translator] Международный плагин запущен! Целевой язык: ${userTargetLang.toUpperCase()}`);
+    console.log(`[Discord Translator] Модуль сохранения шрифтов и HTML запущен! Язык: ${userTargetLang.toUpperCase()}`);
 })();
