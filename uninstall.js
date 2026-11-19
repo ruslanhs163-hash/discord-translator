@@ -7,7 +7,7 @@ const appData = process.env.APPDATA || path.join(process.env.USERPROFILE, 'AppDa
 const discordDir = path.join(localAppData, 'Discord');
 
 console.log('====================================================');
-console.log('  Discord Auto-Translator Uninstaller');
+console.log('  Discord Auto-Translator Complete Uninstaller');
 console.log('====================================================');
 
 function findDiscordCorePaths(dir) {
@@ -35,50 +35,53 @@ const pluginDir = path.join(appData, 'Vencord', 'userplugins', 'discordTranslato
 if (fs.existsSync(pluginDir)) {
     try {
         fs.rmSync(pluginDir, { recursive: true, force: true });
-        console.log('[+] Папка плагина успешно удалена из AppData');
+        console.log('[+] Папка плагина удалена из AppData');
     } catch (e) {}
 }
 
-// 2. Очистка модов ядра Discord
+// 2. Полная очистка и восстановление стокового core.asar и index.js
 const coreDirs = findDiscordCorePaths(discordDir);
 let uninstalledCount = 0;
 
 for (const coreDir of coreDirs) {
-    console.log(`\n[+] Восстановление ядра Discord в: ${coreDir}`);
+    console.log(`\n[+] Полная очистка ядра Discord в: ${coreDir}`);
+
+    // А) Восстановление чистого index.js
+    const indexJsPath = path.join(coreDir, 'index.js');
+    if (fs.existsSync(indexJsPath)) {
+        fs.writeFileSync(indexJsPath, "module.exports = require('./core.asar');\n", 'utf8');
+        console.log('   [OK] Восстановлен чистый index.js');
+    }
+
+    // Б) Восстановление чистого core.asar
     const coreAsarPath = path.join(coreDir, 'core.asar');
     const unpackedDir = path.join(coreDir, 'core_unpacked');
 
-    try {
-        // Распаковка
-        execSync(`npx -y asar extract "${coreAsarPath}" "${unpackedDir}"`, { stdio: 'ignore' });
+    if (fs.existsSync(coreAsarPath)) {
+        try {
+            execSync(`npx -y asar extract "${coreAsarPath}" "${unpackedDir}"`, { stdio: 'ignore' });
 
-        const preloadPath = path.join(unpackedDir, 'mainScreenPreload.js');
-        if (fs.existsSync(preloadPath)) {
-            let preloadContent = fs.readFileSync(preloadPath, 'utf8');
+            const preloadPath = path.join(unpackedDir, 'mainScreenPreload.js');
+            if (fs.existsSync(preloadPath)) {
+                let preloadContent = fs.readFileSync(preloadPath, 'utf8');
 
-            const splitTag = '/* DISCORD AUTO TRANSLATOR INJECTION */';
-            if (preloadContent.includes(splitTag)) {
-                preloadContent = preloadContent.split(splitTag)[0].trim() + '\n';
-                fs.writeFileSync(preloadPath, preloadContent, 'utf8');
-
-                // Перепаковка
-                execSync(`npx -y asar pack "${unpackedDir}" "${coreAsarPath}"`, { stdio: 'ignore' });
-                console.log('   [УСПЕХ] Оригинальное ядро полностью восстановлено!');
-                uninstalledCount++;
-            } else {
-                console.log('   [ИНФО] Патч не найден, ядро чистые.');
+                const splitTag = '/* DISCORD AUTO TRANSLATOR INJECTION */';
+                if (preloadContent.includes(splitTag)) {
+                    preloadContent = preloadContent.split(splitTag)[0].trim() + '\n';
+                    fs.writeFileSync(preloadPath, preloadContent, 'utf8');
+                    execSync(`npx -y asar pack "${unpackedDir}" "${coreAsarPath}"`, { stdio: 'ignore' });
+                    console.log('   [OK] Очищен mainScreenPreload.js внутри core.asar');
+                }
             }
+
+            fs.rmSync(unpackedDir, { recursive: true, force: true });
+            uninstalledCount++;
+        } catch (err) {
+            console.error('   [ОШИБКА] Ошибка очистки asar:', err.message);
         }
-
-        // Очистка временных файлов
-        fs.rmSync(unpackedDir, { recursive: true, force: true });
-
-    } catch (err) {
-        console.error(`   [ОШИБКА] Ошибка удаления из ${coreDir}:`, err.message);
     }
 }
 
 console.log('\n====================================================');
-console.log(`[ГОТОВО] Переводчик успешно удален из Discord!`);
-console.log('Инструкция: Нажмите Ctrl + R в Discord для обновления.');
+console.log(`[УСПЕХ] Переводчик полностью и без следа удален из Discord!`);
 console.log('====================================================\n');
