@@ -17,17 +17,7 @@ if "%choice%"=="1" goto INSTALL
 :INSTALL
 echo.
 echo Запуск установки...
-node "%~dp0patchDiscordCore.js"
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo Запуск альтернативного метода установки...
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0installer.ps1"
-)
-echo.
-echo ====================================================
-echo [УСПЕХ] Процесс установки завершен!
-echo Инструкция: Откройте Discord и нажмите Ctrl + R.
-echo ====================================================
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0installer.ps1"
 echo.
 pause
 exit /b
@@ -35,12 +25,7 @@ exit /b
 :UNINSTALL
 echo.
 echo Запуск удаления...
-node "%~dp0uninstall.js"
-echo.
-echo ====================================================
-echo [УСПЕХ] Переводчик успешно удален из Discord!
-echo Инструкция: Откройте Discord и нажмите Ctrl + R.
-echo ====================================================
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0uninstall.ps1"
 echo.
 pause
 exit /b

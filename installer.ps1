@@ -1,13 +1,11 @@
-# PowerShell script for Official Discord Desktop (resources/app Injection)
+# PowerShell Standalone Installer for Discord Auto-Translator
 $ErrorActionPreference = "Stop"
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host "  Official Discord Desktop Native Auto-Translator Setup" -ForegroundColor Green
+Write-Host "  Discord Auto-Translator Installer (Windows)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
 
-$appData = [System.Environment]::GetFolderPath('ApplicationData')
 $localAppData = [System.Environment]::GetFolderPath('LocalApplicationData')
-
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sourceFile = Join-Path $scriptDir "discordTranslatorVencord.js"
 
@@ -16,49 +14,21 @@ if (-not (Test-Path $sourceFile)) {
     Exit 1
 }
 
-# 1. Save plugin file
-$targetDir = Join-Path $appData "Vencord\userplugins\discordTranslator"
-if (-not (Test-Path $targetDir)) {
-    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-}
-$targetFile = Join-Path $targetDir "index.js"
-Copy-Item -Path $sourceFile -Destination $targetFile -Force
-Write-Host "[OK] Plugin saved to: $targetFile" -ForegroundColor Green
+$pluginCode = [System.IO.File]::ReadAllText($sourceFile, [System.Text.Encoding]::UTF8)
 
-# 2. Patch Official Discord Desktop resources/app
-$discordAppPaths = Get-ChildItem -Path "$localAppData\Discord" -Recurse -Filter "resources" -ErrorAction SilentlyContinue | Where-Object { $_.PSIsContainer }
+# Header tag
+$injectionHeader = "/* --- DISCORD AUTO TRANSLATOR NATIVE INJECTOR --- */"
 
-$patchedCount = 0
-foreach ($resFolder in $discordAppPaths) {
-    $appFolder = Join-Path $resFolder.FullName "app"
-    if (-not (Test-Path $appFolder)) {
-        New-Item -ItemType Directory -Path $appFolder -Force | Out-Null
-    }
+$encodedJS = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pluginCode))
 
-    $packageJsonPath = Join-Path $appFolder "package.json"
-    $packageJsonContent = '{"name": "discord", "main": "index.js"}'
-    Set-Content -Path $packageJsonPath -Value $packageJsonContent -Encoding ASCII
-
-    $indexJsPath = Join-Path $appFolder "index.js"
-    $indexJsContent = @"
-const path = require('path');
-const fs = require('fs');
-const electron = require('electron');
-
-// 1. Load Original Discord app.asar
+$nativeCode = @"
+$injectionHeader
 try {
-  require('../app.asar');
-} catch (e) {
-  console.error('[Discord Orig Load Error]:', e);
-}
+  const electron = require('electron');
+  const pluginJS = Buffer.from('$encodedJS', 'base64').toString('utf8');
 
-// 2. Setup Auto-Translator Injection & CSP Bypass
-const pluginPath = path.join(process.env.APPDATA, 'Vencord', 'userplugins', 'discordTranslator', 'index.js');
-
-try {
   if (electron && electron.app) {
     electron.app.whenReady().then(() => {
-      // Disable CSP headers for translation requests
       if (electron.session && electron.session.defaultSession) {
         electron.session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
           if (details.responseHeaders) {
@@ -69,7 +39,6 @@ try {
         });
       }
 
-      // IPC Main Process Translator
       if (electron.ipcMain) {
         electron.ipcMain.handle('TRANSLATE_TEXT', async (event, { text, target, source }) => {
           return new Promise((resolve) => {
@@ -100,32 +69,47 @@ try {
       }
     });
 
-    // Inject Script Tag into Main World
-    electron.app.on('browser-window-created', (evt, win) => {
+    const injectScript = (win) => {
       if (!win || !win.webContents) return;
-      const inject = () => {
-        if (fs.existsSync(pluginPath)) {
-          const js = fs.readFileSync(pluginPath, 'utf8');
-          const scriptInjector = 'try { const scr = document.createElement("script"); scr.textContent = ' + JSON.stringify(js) + '; (document.head || document.documentElement).appendChild(scr); } catch(e) {}';
-          win.webContents.executeJavaScript(scriptInjector).catch(() => {});
-        }
+      const runJS = () => {
+        const scriptWrapper = 'try { const scr = document.createElement("script"); scr.textContent = ' + JSON.stringify(pluginJS) + '; (document.head || document.documentElement).appendChild(scr); } catch(e) {}';
+        win.webContents.executeJavaScript(scriptWrapper).catch(() => {});
       };
-      win.webContents.on('did-finish-load', inject);
-      win.webContents.on('dom-ready', inject);
-      win.webContents.on('did-navigate', inject);
-    });
+      win.webContents.on('did-finish-load', runJS);
+      win.webContents.on('dom-ready', runJS);
+    };
+
+    electron.app.on('browser-window-created', (evt, win) => injectScript(win));
   }
-} catch (err) {
-  console.error('[Discord Translator Error]:', err);
+} catch (e) {
+  console.error('[Translator Setup Err]:', e);
 }
 "@
 
-    Set-Content -Path $indexJsPath -Value $indexJsContent -Encoding ASCII
+$discordCorePaths = Get-ChildItem -Path "$localAppData\Discord" -Recurse -Filter "index.js" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -like "*discord_desktop_core*\index.js" }
+
+if (-not $discordCorePaths) {
+    Write-Host "[ERROR] Discord Desktop installation not found!" -ForegroundColor Red
+    Exit 1
+}
+
+$patchedCount = 0
+foreach ($coreFile in $discordCorePaths) {
+    $content = [System.IO.File]::ReadAllText($coreFile.FullName, [System.Text.Encoding]::UTF8)
+
+    if ($content.Contains($injectionHeader)) {
+        $parts = $content -split [regex]::Escape($injectionHeader)
+        $content = $parts[0]
+    }
+
+    $newContent = $nativeCode + "`r`n`r`n" + $content
+    [System.IO.File]::WriteAllText($coreFile.FullName, $newContent, [System.Text.Encoding]::UTF8)
     $patchedCount++
-    Write-Host "[OK] Created Native Override in: $appFolder" -ForegroundColor Green
+    Write-Host "[OK] Patched Discord Module: $($coreFile.FullName)" -ForegroundColor Green
 }
 
 Write-Host ""
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host "[SUCCESS] Official Discord Desktop Patched Successfully!" -ForegroundColor Green
+Write-Host "[SUCCESS] Installation Complete! ($patchedCount Discord core files patched)" -ForegroundColor Green
+Write-Host "Instructions: Open Discord Desktop and press Ctrl + R!" -ForegroundColor Yellow
 Write-Host "====================================================" -ForegroundColor Cyan
