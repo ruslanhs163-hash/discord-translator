@@ -1,9 +1,14 @@
-# PowerShell Universal Installer for Discord Auto-Translator
+# PowerShell Universal Dual-Coverage Installer for Discord Auto-Translator
 $ErrorActionPreference = "Stop"
 
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host "  Discord Auto-Translator Installer (Windows)" -ForegroundColor Green
+Write-Host "  Discord Auto-Translator Universal Installer" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
+
+# 1. Завершаем все процессы Discord для снятия файловых блокировок Windows
+Write-Host "[1/3] Closing Discord processes..." -ForegroundColor Yellow
+Stop-Process -Name "Discord" -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 1
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sourceFile = Join-Path $scriptDir "discordTranslatorVencord.js"
@@ -18,8 +23,7 @@ $injectionHeader = "/* --- DISCORD AUTO TRANSLATOR NATIVE INJECTOR --- */"
 $encodedJS = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pluginCode))
 
 $indexJsCode = @"
-const core = require('./core.asar');
-module.exports = core;
+module.exports = require('./core.asar');
 
 $injectionHeader
 try {
@@ -95,6 +99,8 @@ $searchFolders = @(
     "C:\Program Files (x86)\Discord"
 )
 
+# 2. Поиск модулей discord_desktop_core
+Write-Host "[2/3] Searching for Discord installation modules..." -ForegroundColor Yellow
 $discordCorePaths = @()
 foreach ($folder in $searchFolders) {
     if (Test-Path $folder) {
@@ -106,15 +112,27 @@ foreach ($folder in $searchFolders) {
 }
 
 if (-not $discordCorePaths) {
-    Write-Host "[ERROR] Discord Desktop installation not found!" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "[ATTENTION] Discord core modules not found on disk yet!" -ForegroundColor Yellow
+    Write-Host "If you just freshly installed Discord, please:" -ForegroundColor White
+    Write-Host "1. Launch Discord ONCE so it completes downloading its modules." -ForegroundColor White
+    Write-Host "2. Close Discord." -ForegroundColor White
+    Write-Host "3. Run install.bat again." -ForegroundColor White
+    Write-Host "====================================================" -ForegroundColor Cyan
     Exit 1
 }
 
+# 3. Патчинг модулей ядра
+Write-Host "[3/3] Patching Discord core modules..." -ForegroundColor Yellow
 $patchedCount = 0
 foreach ($coreFile in $discordCorePaths) {
-    [System.IO.File]::WriteAllText($coreFile.FullName, $indexJsCode, [System.Text.Encoding]::UTF8)
-    $patchedCount++
-    Write-Host "[SUCCESS] Patched Discord Core: $($coreFile.FullName)" -ForegroundColor Green
+    try {
+        [System.IO.File]::WriteAllText($coreFile.FullName, $indexJsCode, [System.Text.Encoding]::UTF8)
+        $patchedCount++
+        Write-Host "[SUCCESS] Patched: $($coreFile.FullName)" -ForegroundColor Green
+    } catch {
+        Write-Host "[WARNING] Could not write to $($coreFile.FullName): $($_.Exception.Message)" -ForegroundColor Red
+    }
 }
 
 Write-Host ""
@@ -122,9 +140,9 @@ Write-Host "====================================================" -ForegroundCol
 Write-Host "[SUCCESS] Installation Complete! ($patchedCount Discord core modules patched)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
 
-# Автоматический перезапуск Discord
+# 4. Автоматический перезапуск Discord
 $discordUpdater = Join-Path $env:LOCALAPPDATA "Discord\Update.exe"
 if (Test-Path $discordUpdater) {
-    Write-Host "[INFO] Automatically launching Discord Desktop..." -ForegroundColor Yellow
+    Write-Host "[INFO] Launching Discord Desktop..." -ForegroundColor Yellow
     Start-Process -FilePath $discordUpdater -ArgumentList "--processStart Discord.exe"
 }
