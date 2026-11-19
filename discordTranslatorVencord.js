@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Discord Desktop Auto-Translator Top-Bar Badge
 // @namespace    http://tampermonkey.net/
-// @version      5.2.0
-// @description  Бесшовный переводчик с гарантированным прикреплением к document.documentElement
+// @version      5.3.0
+// @description  Бесшовный переводчик с идеальным позиционированием плашки управления без наложения
 // ==/UserScript==
 
 (function() {
@@ -11,7 +11,7 @@
     if (window.__DISCORD_TRANSLATOR_ACTIVE__) return;
     window.__DISCORD_TRANSLATOR_ACTIVE__ = true;
 
-    console.log('[Discord Translator] Инициализация модуля с привязкой к documentElement...');
+    console.log('[Discord Translator] Инициализация модуля с точным позиционированием...');
 
     let isEnabled = localStorage.getItem('discord_translator_enabled') !== 'false';
 
@@ -92,7 +92,7 @@
     }
 
     /**
-     * Гарантированная плавающая кнопка в правом верхнем углу (Привязка к document.documentElement)
+     * Идеальное позиционирование плавающей кнопки в пустой зоне (right: 215px) без наложения на иконки
      */
     function renderFloatingButton() {
         let btn = document.getElementById('discord-translator-floating-btn');
@@ -103,20 +103,20 @@
 
             btn.style.cssText = `
                 position: fixed !important;
-                top: 8px !important;
-                right: 180px !important;
+                top: 6px !important;
+                right: 215px !important;
                 z-index: 2147483647 !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                padding: 4px 12px !important;
+                padding: 3px 10px !important;
                 border-radius: 6px !important;
-                font-size: 12px !important;
+                font-size: 11px !important;
                 font-family: system-ui, -apple-system, sans-serif !important;
                 font-weight: bold !important;
                 cursor: pointer !important;
                 user-select: none !important;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.6) !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.6) !important;
                 transition: all 0.2s ease !important;
                 -webkit-app-region: no-drag !important;
                 pointer-events: auto !important;
@@ -238,5 +238,5 @@
     setInterval(scanAndTranslate, 500);
     scanAndTranslate();
 
-    console.log(`[Discord Translator] Плашка 100% привязана к documentElement!`);
+    console.log(`[Discord Translator] Идеальное позиционирование кнопки (right: 215px) нативно активо!`);
 })();
