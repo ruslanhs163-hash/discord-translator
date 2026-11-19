@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Discord Desktop Auto-Translator Splash-Filter Edition
+// @name         Discord Desktop Auto-Translator License & Free Edition
 // @namespace    http://tampermonkey.net/
-// @version      5.4.0
-// @description  Бесшовный переводчик с фильтрацией стартового всплывающего окна "Starting..."
+// @version      6.0.0
+// @description  Глобальный авто-переводчик с поддержкой бесплатного режима и опциональных PRO-ключей доступа
 // ==/UserScript==
 
 (function() {
@@ -11,14 +11,36 @@
     if (window.__DISCORD_TRANSLATOR_ACTIVE__) return;
     window.__DISCORD_TRANSLATOR_ACTIVE__ = true;
 
-    console.log('[Discord Translator] Инициализация модуля с фильтрацией сплэш-скрина...');
+    console.log('[Discord Translator] Запуск модуля с поддержкой ключей доступа...');
 
-    let isEnabled = localStorage.getItem('discord_translator_enabled') !== 'false';
-
-    let userTargetLang = localStorage.getItem('discord_translator_target_lang');
-    if (!userTargetLang) {
-        userTargetLang = (navigator.language || navigator.userLanguage || 'ru').split('-')[0].toLowerCase();
+    let isEnabled = true;
+    try {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem) {
+            isEnabled = localStorage.getItem('discord_translator_enabled') !== 'false';
+        }
+    } catch (e) {
+        isEnabled = true;
     }
+
+    let userTargetLang = 'ru';
+    try {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem) {
+            userTargetLang = localStorage.getItem('discord_translator_target_lang') || '';
+        }
+        if (!userTargetLang && typeof navigator !== 'undefined') {
+            userTargetLang = (navigator.language || navigator.userLanguage || 'ru').split('-')[0].toLowerCase();
+        }
+    } catch (e) {
+        userTargetLang = 'ru';
+    }
+
+    // Система ключей доступа (По умолчанию бесплатный доступ FREE)
+    let licenseKey = '';
+    try {
+        if (typeof localStorage !== 'undefined') {
+            licenseKey = localStorage.getItem('discord_translator_license_key') || 'FREE-ACCESS';
+        }
+    } catch(e) {}
 
     const translationCache = new Map();
     const MAX_CACHE_SIZE = 4000;
@@ -58,7 +80,7 @@
         const key = `${source}:${target}:${text.trim()}`;
         if (translationCache.has(key)) return translationCache.get(key);
 
-        if (window.require) {
+        if (typeof window !== 'undefined' && window.require) {
             try {
                 const { ipcRenderer } = window.require('electron');
                 if (ipcRenderer && ipcRenderer.invoke) {
@@ -92,17 +114,16 @@
     }
 
     /**
-     * Плавающая кнопка только для основного окна Discord (Игнорирует сплэш-скрин "Starting...")
+     * Плавающая кнопка переключателя с поддержкой ввода ключей доступа
      */
     function renderFloatingButton() {
-        // Игнорируем маленькие всплывающие окна загрузки "Starting..."
-        if (window.innerWidth < 500 || !document.querySelector('#app-mount')) return;
+        if (typeof window === 'undefined' || window.innerWidth < 500 || !document.querySelector('#app-mount')) return;
 
         let btn = document.getElementById('discord-translator-floating-btn');
         if (!btn) {
             btn = document.createElement('div');
             btn.id = 'discord-translator-floating-btn';
-            btn.title = 'Click to toggle auto-translator';
+            btn.title = 'ЛКМ - Включить/Выключить | ПКМ - Ввести ключ доступа';
 
             btn.style.cssText = `
                 position: fixed !important;
@@ -125,22 +146,40 @@
                 pointer-events: auto !important;
             `;
 
-            function toggleState(e) {
+            // Левый клик - ВКЛ/ВЫКЛ
+            btn.addEventListener('click', (e) => {
                 if (e) {
                     e.stopPropagation();
                     e.preventDefault();
                 }
                 isEnabled = !isEnabled;
-                localStorage.setItem('discord_translator_enabled', isEnabled ? 'true' : 'false');
+                try {
+                    if (typeof localStorage !== 'undefined') {
+                        localStorage.setItem('discord_translator_enabled', isEnabled ? 'true' : 'false');
+                    }
+                } catch(err) {}
 
                 if (!isEnabled) {
                     translationCache.clear();
                 }
 
                 updateBtnState();
-            }
+            }, true);
 
-            btn.addEventListener('click', toggleState, true);
+            // Правый клик - Ввод ключа доступа (License Key)
+            btn.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const key = prompt('Введите ключ доступа / PRO-ключ (по умолчанию доступ БЕСПЛАТНЫЙ):', licenseKey);
+                if (key !== null) {
+                    licenseKey = key.trim() || 'FREE-ACCESS';
+                    try {
+                        localStorage.setItem('discord_translator_license_key', licenseKey);
+                    } catch(err) {}
+                    alert('Ключ доступа сохранен: ' + licenseKey);
+                }
+            }, true);
+
             btn.addEventListener('mousedown', (e) => e.stopPropagation(), true);
 
             const root = document.documentElement || document.body;
@@ -214,8 +253,7 @@
     }
 
     function scanAndTranslate() {
-        // Игнорируем стартовые всплывающие окна
-        if (window.innerWidth < 500 || !document.querySelector('#app-mount')) return;
+        if (typeof window === 'undefined' || window.innerWidth < 500 || !document.querySelector('#app-mount')) return;
 
         renderFloatingButton();
 
@@ -241,8 +279,8 @@
         }
     }
 
-    setInterval(scanAndTranslate, 500);
+    setInterval(scanAndTranslate, 600);
     scanAndTranslate();
 
-    console.log(`[Discord Translator] Фильтрация сплэш-скрина активна!`);
+    console.log(`[Discord Translator] Модуль доступа активен! Ключ: ${licenseKey}`);
 })();
