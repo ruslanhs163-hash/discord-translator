@@ -1,22 +1,21 @@
 @echo off
-chcp 65001 > nul
 title Discord Auto-Translator Setup
 
 echo ====================================================
-echo   Discord Auto-Translator Setup (Установка / Удаление)
+echo   Discord Auto-Translator Setup
 echo ====================================================
 echo.
-echo  [1] Установить / Обновить переводчик в Discord
-echo  [2] Полностью удалить переводчик из Discord
+echo  [1] Install / Update Translator
+echo  [2] Uninstall Translator
 echo.
-set /p choice="Выберите действие (нажмите 1 или 2): "
+set /p choice="Enter option (1 or 2): "
 
 if "%choice%"=="2" goto UNINSTALL
-if "%choice%"=="1" goto INSTALL
+goto INSTALL
 
 :INSTALL
 echo.
-echo Запуск установки...
+echo Running installation...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0installer.ps1"
 echo.
 pause
@@ -24,7 +23,7 @@ exit /b
 
 :UNINSTALL
 echo.
-echo Запуск удаления...
+echo Running uninstallation...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0uninstall.ps1"
 echo.
 pause

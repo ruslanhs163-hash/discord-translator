@@ -1,24 +1,20 @@
-# PowerShell Standalone Installer for Discord Auto-Translator
+# PowerShell Universal Installer for Discord Auto-Translator
 $ErrorActionPreference = "Stop"
 
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host "  Discord Auto-Translator Installer (Windows)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
 
-$localAppData = [System.Environment]::GetFolderPath('LocalApplicationData')
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $sourceFile = Join-Path $scriptDir "discordTranslatorVencord.js"
 
 if (-not (Test-Path $sourceFile)) {
-    Write-Host "[ERROR] Plugin file not found!" -ForegroundColor Red
+    Write-Host "[ERROR] Plugin file discordTranslatorVencord.js not found!" -ForegroundColor Red
     Exit 1
 }
 
 $pluginCode = [System.IO.File]::ReadAllText($sourceFile, [System.Text.Encoding]::UTF8)
-
-# Header tag
 $injectionHeader = "/* --- DISCORD AUTO TRANSLATOR NATIVE INJECTOR --- */"
-
 $encodedJS = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pluginCode))
 
 $nativeCode = @"
@@ -86,10 +82,30 @@ try {
 }
 "@
 
-$discordCorePaths = Get-ChildItem -Path "$localAppData\Discord" -Recurse -Filter "index.js" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -like "*discord_desktop_core*\index.js" }
+# Все возможные пути установки Discord на Windows
+$searchFolders = @(
+    "$env:LOCALAPPDATA\Discord",
+    "$env:APPDATA\Discord",
+    "$env:USERPROFILE\AppData\Local\Discord",
+    "$env:LOCALAPPDATA\DiscordCanary",
+    "$env:LOCALAPPDATA\DiscordPTB",
+    "C:\Program Files\Discord",
+    "C:\Program Files (x86)\Discord"
+)
+
+$discordCorePaths = @()
+foreach ($folder in $searchFolders) {
+    if (Test-Path $folder) {
+        $found = Get-ChildItem -Path $folder -Recurse -Filter "index.js" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -like "*discord_desktop_core*\index.js" }
+        if ($found) {
+            $discordCorePaths += $found
+        }
+    }
+}
 
 if (-not $discordCorePaths) {
-    Write-Host "[ERROR] Discord Desktop installation not found!" -ForegroundColor Red
+    Write-Host "[ERROR] Discord Desktop installation not found on this PC!" -ForegroundColor Red
+    Write-Host "Please make sure official Discord Desktop is installed." -ForegroundColor Yellow
     Exit 1
 }
 
@@ -105,11 +121,11 @@ foreach ($coreFile in $discordCorePaths) {
     $newContent = $nativeCode + "`r`n`r`n" + $content
     [System.IO.File]::WriteAllText($coreFile.FullName, $newContent, [System.Text.Encoding]::UTF8)
     $patchedCount++
-    Write-Host "[OK] Patched Discord Module: $($coreFile.FullName)" -ForegroundColor Green
+    Write-Host "[SUCCESS] Patched Discord Core: $($coreFile.FullName)" -ForegroundColor Green
 }
 
 Write-Host ""
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host "[SUCCESS] Installation Complete! ($patchedCount Discord core files patched)" -ForegroundColor Green
+Write-Host "[SUCCESS] Installation Complete! ($patchedCount Discord core modules patched)" -ForegroundColor Green
 Write-Host "Instructions: Open Discord Desktop and press Ctrl + R!" -ForegroundColor Yellow
 Write-Host "====================================================" -ForegroundColor Cyan
