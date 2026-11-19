@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Discord Desktop Auto-Translator Top-Bar Badge
+// @name         Discord Desktop Auto-Translator Splash-Filter Edition
 // @namespace    http://tampermonkey.net/
-// @version      5.3.0
-// @description  Бесшовный переводчик с идеальным позиционированием плашки управления без наложения
+// @version      5.4.0
+// @description  Бесшовный переводчик с фильтрацией стартового всплывающего окна "Starting..."
 // ==/UserScript==
 
 (function() {
@@ -11,7 +11,7 @@
     if (window.__DISCORD_TRANSLATOR_ACTIVE__) return;
     window.__DISCORD_TRANSLATOR_ACTIVE__ = true;
 
-    console.log('[Discord Translator] Инициализация модуля с точным позиционированием...');
+    console.log('[Discord Translator] Инициализация модуля с фильтрацией сплэш-скрина...');
 
     let isEnabled = localStorage.getItem('discord_translator_enabled') !== 'false';
 
@@ -92,9 +92,12 @@
     }
 
     /**
-     * Идеальное позиционирование плавающей кнопки в пустой зоне (right: 215px) без наложения на иконки
+     * Плавающая кнопка только для основного окна Discord (Игнорирует сплэш-скрин "Starting...")
      */
     function renderFloatingButton() {
+        // Игнорируем маленькие всплывающие окна загрузки "Starting..."
+        if (window.innerWidth < 500 || !document.querySelector('#app-mount')) return;
+
         let btn = document.getElementById('discord-translator-floating-btn');
         if (!btn) {
             btn = document.createElement('div');
@@ -211,6 +214,9 @@
     }
 
     function scanAndTranslate() {
+        // Игнорируем стартовые всплывающие окна
+        if (window.innerWidth < 500 || !document.querySelector('#app-mount')) return;
+
         renderFloatingButton();
 
         if (!isEnabled) return;
@@ -238,5 +244,5 @@
     setInterval(scanAndTranslate, 500);
     scanAndTranslate();
 
-    console.log(`[Discord Translator] Идеальное позиционирование кнопки (right: 215px) нативно активо!`);
+    console.log(`[Discord Translator] Фильтрация сплэш-скрина активна!`);
 })();
