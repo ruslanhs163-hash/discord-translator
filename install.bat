@@ -15,6 +15,10 @@ goto INSTALL
 
 :INSTALL
 echo.
+echo Closing Discord if running...
+taskkill /F /IM Discord.exe 2>nul
+timeout /t 1 /nobreak >nul
+
 echo Running installation...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0installer.ps1"
 echo.
@@ -23,6 +27,10 @@ exit /b
 
 :UNINSTALL
 echo.
+echo Closing Discord if running...
+taskkill /F /IM Discord.exe 2>nul
+timeout /t 1 /nobreak >nul
+
 echo Running uninstallation...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0uninstall.ps1"
 echo.
