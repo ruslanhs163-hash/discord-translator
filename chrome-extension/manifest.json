@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Discord Auto-Translator",
+  "version": "1.0.0",
+  "description": "Автоматический переводчик сообщений для Discord с плавающей кнопкой управления",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://discord.com/*",
+    "https://translate.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://discord.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

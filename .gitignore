@@ -1,0 +1,14 @@
+# Node & OS junk
+node_modules/
+*.log
+*.png
+*.tmp
+screen.png
+
+# Discord temp builds
+core_unpacked/
+*.asar.bak
+
+# IDE
+.idea/
+.vscode/
