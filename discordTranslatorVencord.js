@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Discord Desktop Auto-Translator Font & Format Preserving Edition
+// @name         Discord Desktop Auto-Translator Full Embed & Bot Support
 // @namespace    http://tampermonkey.net/
-// @version      5.0.0
-// @description  Бесшовный переводчик с 100% сохранением шрифтов, жирного текста, заголовков, ссылок и разметки Discord
+// @version      5.1.0
+// @description  Бесшовный переводчик с полной поддержкой Discord Bot Embeds, карточек, правил и системных объявлений
 // ==/UserScript==
 
 (function() {
@@ -11,7 +11,7 @@
     if (window.__DISCORD_TRANSLATOR_ACTIVE__) return;
     window.__DISCORD_TRANSLATOR_ACTIVE__ = true;
 
-    console.log('[Discord Translator] Запуск модуля с 100% сохранением шрифтов и разметки...');
+    console.log('[Discord Translator] Запуск модуля с полной поддержкой Discord Bot Embeds...');
 
     let isEnabled = localStorage.getItem('discord_translator_enabled') !== 'false';
 
@@ -162,7 +162,7 @@
     }
 
     /**
-     * РЕКУРСИВНЫЙ ПЕРЕВОД УЗЛОВ ТЕКСТА (Сохраняет 100% HTML, шрифты, жирность, ссылки и упоминания!)
+     * РЕКУРСИВНЫЙ ПЕРЕВОД УЗЛОВ ТЕКСТА (Сохраняет 100% HTML, разметку и стили Discord)
      */
     async function translateTextNodes(node) {
         if (!node) return;
@@ -171,7 +171,6 @@
             const text = node.nodeValue ? node.nodeValue.trim() : '';
             if (!text || isNativeUserLanguageText(text)) return;
 
-            // Запрет перевода системных атрибутов
             if (node.parentElement && (
                 node.parentElement.tagName === 'SCRIPT' ||
                 node.parentElement.tagName === 'STYLE' ||
@@ -186,7 +185,6 @@
                 node.nodeValue = node.nodeValue.replace(text, translated);
             }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
-            // Пропускаем поля ввода и упоминания
             if (node.getAttribute('contenteditable') === 'true' || node.tagName === 'INPUT' || node.tagName === 'TEXTAREA') return;
             if (node.classList && (node.classList.contains('mention') || node.classList.contains('emoji'))) return;
 
@@ -197,7 +195,7 @@
     }
 
     /**
-     * Сканирование элементов сообщений
+     * Сканирование элементов сообщений, карточек и Embeds
      */
     function processMessageContainer(el) {
         if (!isEnabled) return;
@@ -205,7 +203,6 @@
 
         el.dataset.autoTranslated = 'processing';
 
-        // Переводим текстовые узлы с сохранением оригинальных тегов HTML
         translateTextNodes(el).then(() => {
             el.dataset.autoTranslated = 'true';
         }).catch(() => {
@@ -218,12 +215,19 @@
 
         if (!isEnabled) return;
 
+        // Расширенные селекторы текста сообщений, карточек ботов (Embeds), правил и объявлений
         const selectors = [
             '[class*="messageContent"]',
             '[id^="message-content-"]',
             '[class*="markup-"]',
             '[class*="embedDescription"]',
-            '[class*="embedTitle"]'
+            '[class*="embedTitle"]',
+            '[class*="embedField"]',
+            '[class*="embedFieldValue"]',
+            '[class*="embedFieldName"]',
+            '[class*="embedFooterText"]',
+            '[class*="embedText"]',
+            '[class*="embedFull"]'
         ];
 
         const elements = document.querySelectorAll(selectors.join(', '));
@@ -235,5 +239,5 @@
     setInterval(scanAndTranslate, 800);
     scanAndTranslate();
 
-    console.log(`[Discord Translator] Модуль сохранения шрифтов и HTML запущен! Язык: ${userTargetLang.toUpperCase()}`);
+    console.log(`[Discord Translator] Модуль Embeds и карточек ботов запущен! Язык: ${userTargetLang.toUpperCase()}`);
 })();
