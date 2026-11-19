@@ -35,6 +35,12 @@ foreach ($coreFile in $discordCorePaths) {
 
 Write-Host ""
 Write-Host "====================================================" -ForegroundColor Cyan
-Write-Host "[SUCCESS] Uninstallation Complete! ($uninstalledCount Discord core modules restored to stock)" -ForegroundColor Green
-Write-Host "Instructions: Open Discord Desktop and press Ctrl + R!" -ForegroundColor Yellow
+Write-Host "[SUCCESS] Uninstallation Complete! ($uninstalledCount Discord core modules restored)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
+
+# Автоматический перезапуск Discord
+$discordUpdater = Join-Path $env:LOCALAPPDATA "Discord\Update.exe"
+if (Test-Path $discordUpdater) {
+    Write-Host "[INFO] Automatically launching Discord Desktop..." -ForegroundColor Yellow
+    Start-Process -FilePath $discordUpdater -ArgumentList "--processStart Discord.exe"
+}

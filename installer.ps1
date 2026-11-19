@@ -17,9 +17,9 @@ $pluginCode = [System.IO.File]::ReadAllText($sourceFile, [System.Text.Encoding]:
 $injectionHeader = "/* --- DISCORD AUTO TRANSLATOR NATIVE INJECTOR --- */"
 $encodedJS = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pluginCode))
 
-# Инициализация index.js: Сначала строгий экспорт ядра Discord, затем фоновый инжектор
 $indexJsCode = @"
-module.exports = require('./core.asar');
+const core = require('./core.asar');
+module.exports = core;
 
 $injectionHeader
 try {
@@ -120,5 +120,11 @@ foreach ($coreFile in $discordCorePaths) {
 Write-Host ""
 Write-Host "====================================================" -ForegroundColor Cyan
 Write-Host "[SUCCESS] Installation Complete! ($patchedCount Discord core modules patched)" -ForegroundColor Green
-Write-Host "Instructions: Open Discord Desktop and press Ctrl + R!" -ForegroundColor Yellow
 Write-Host "====================================================" -ForegroundColor Cyan
+
+# Автоматический перезапуск Discord
+$discordUpdater = Join-Path $env:LOCALAPPDATA "Discord\Update.exe"
+if (Test-Path $discordUpdater) {
+    Write-Host "[INFO] Automatically launching Discord Desktop..." -ForegroundColor Yellow
+    Start-Process -FilePath $discordUpdater -ArgumentList "--processStart Discord.exe"
+}
