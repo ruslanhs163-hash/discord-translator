@@ -15,35 +15,16 @@ goto INSTALL
 
 :INSTALL
 echo.
-echo Closing Discord if running...
-taskkill /F /IM Discord.exe 2>nul
-timeout /t 1 /nobreak >nul
-
-echo Patching Discord core...
-node "%~dp0patchDiscordCore.js"
-if %ERRORLEVEL% NEQ 0 (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0installer.ps1"
-)
-
-echo.
-echo Launching Discord...
-powershell -NoProfile -Command "Start-Process -FilePath '$env:LOCALAPPDATA\Discord\Update.exe' -ArgumentList '--processStart Discord.exe'"
+echo Running installation...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0installer.ps1"
 echo.
 pause
 exit /b
 
 :UNINSTALL
 echo.
-echo Closing Discord if running...
-taskkill /F /IM Discord.exe 2>nul
-timeout /t 1 /nobreak >nul
-
-echo Restoring clean Discord core...
+echo Running uninstallation...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0uninstall.ps1"
-
-echo.
-echo Launching Discord...
-powershell -NoProfile -Command "Start-Process -FilePath '$env:LOCALAPPDATA\Discord\Update.exe' -ArgumentList '--processStart Discord.exe'"
 echo.
 pause
 exit /b

@@ -5,6 +5,12 @@ Write-Host "====================================================" -ForegroundCol
 Write-Host "  Discord Auto-Translator Uninstaller (Windows)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
 
+# 1. Close Discord if running
+Write-Host "[1/3] Closing Discord processes..." -ForegroundColor Yellow
+Stop-Process -Name "Discord" -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 1
+
+# 2. Restore clean stock discord_desktop_core index.js
 $searchFolders = @(
     "$env:LOCALAPPDATA\Discord",
     "$env:APPDATA\Discord",
@@ -25,6 +31,7 @@ foreach ($folder in $searchFolders) {
     }
 }
 
+Write-Host "[2/3] Restoring original Discord core files..." -ForegroundColor Yellow
 $uninstalledCount = 0
 foreach ($coreFile in $discordCorePaths) {
     $cleanContent = "module.exports = require('./core.asar');`r`n"
@@ -38,8 +45,8 @@ Write-Host "====================================================" -ForegroundCol
 Write-Host "[SUCCESS] Uninstallation Complete! ($uninstalledCount Discord core modules restored)" -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor Cyan
 
-# Автоматический перезапуск Discord
-$discordUpdater = Join-Path $env:LOCALAPPDATA "Discord\Update.exe"
+# 3. Relaunch Discord Desktop safely
+$discordUpdater = "$env:LOCALAPPDATA\Discord\Update.exe"
 if (Test-Path $discordUpdater) {
     Write-Host "[INFO] Automatically launching Discord Desktop..." -ForegroundColor Yellow
     Start-Process -FilePath $discordUpdater -ArgumentList "--processStart Discord.exe"
