@@ -3,7 +3,6 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const localAppData = process.env.LOCALAPPDATA || path.join(process.env.USERPROFILE, 'AppData', 'Local');
-const appData = process.env.APPDATA || path.join(process.env.USERPROFILE, 'AppData', 'Roaming');
 const discordDir = path.join(localAppData, 'Discord');
 
 console.log('====================================================');
@@ -30,30 +29,20 @@ function findDiscordCorePaths(dir) {
     return results;
 }
 
-// 1. Очистка пользовательских файлов плагина
-const pluginDir = path.join(appData, 'Vencord', 'userplugins', 'discordTranslator');
-if (fs.existsSync(pluginDir)) {
-    try {
-        fs.rmSync(pluginDir, { recursive: true, force: true });
-        console.log('[+] Папка плагина удалена из AppData');
-    } catch (e) {}
-}
-
-// 2. Полная очистка и восстановление стокового core.asar и index.js
 const coreDirs = findDiscordCorePaths(discordDir);
 let uninstalledCount = 0;
 
 for (const coreDir of coreDirs) {
-    console.log(`\n[+] Полная очистка ядра Discord в: ${coreDir}`);
+    console.log(`\n[+] Complete cleanup of Discord core: ${coreDir}`);
 
-    // А) Восстановление чистого index.js
+    // 1. Clean index.js
     const indexJsPath = path.join(coreDir, 'index.js');
     if (fs.existsSync(indexJsPath)) {
         fs.writeFileSync(indexJsPath, "module.exports = require('./core.asar');\n", 'utf8');
-        console.log('   [OK] Восстановлен чистый index.js');
+        console.log('   [OK] Clean index.js restored');
     }
 
-    // Б) Восстановление чистого core.asar
+    // 2. Clean mainScreenPreload.js inside core.asar
     const coreAsarPath = path.join(coreDir, 'core.asar');
     const unpackedDir = path.join(coreDir, 'core_unpacked');
 
@@ -70,18 +59,18 @@ for (const coreDir of coreDirs) {
                     preloadContent = preloadContent.split(splitTag)[0].trim() + '\n';
                     fs.writeFileSync(preloadPath, preloadContent, 'utf8');
                     execSync(`npx -y asar pack "${unpackedDir}" "${coreAsarPath}"`, { stdio: 'ignore' });
-                    console.log('   [OK] Очищен mainScreenPreload.js внутри core.asar');
+                    console.log('   [OK] Cleaned mainScreenPreload.js inside core.asar');
                 }
             }
 
             fs.rmSync(unpackedDir, { recursive: true, force: true });
             uninstalledCount++;
         } catch (err) {
-            console.error('   [ОШИБКА] Ошибка очистки asar:', err.message);
+            console.error('   [ERROR] Failed to clean core.asar:', err.message);
         }
     }
 }
 
 console.log('\n====================================================');
-console.log(`[УСПЕХ] Переводчик полностью и без следа удален из Discord!`);
+console.log(`[SUCCESS] Translator 100% completely uninstalled from Discord!`);
 console.log('====================================================\n');
