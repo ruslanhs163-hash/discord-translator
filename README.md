@@ -1,78 +1,47 @@
-# 🌐 Discord Auto-Translator (Global Edition)
+# 🌐 Discord Auto-Translator v8.1 (Universal Global Edition)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Discord-Desktop%20%26%20Web-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord Support" />
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Chrome%20%7C%20Yandex-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Platform" />
-  <img src="https://img.shields.io/badge/Performance-CPU%20%3C%200.1%25-brightgreen?style=for-the-badge" alt="Performance" />
-  <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" alt="License" />
-</p>
-
-> 🇷🇺 **RU:** Бесшовный автоматический переводчик входящих сообщений для Discord (Desktop и Browser). Мгновенно переводит чужие сообщения на ваш родной язык с кнопкой «ВКЛ/ВЫКЛ». CPU <0.1%.
-> 
-> 🇬🇧 **EN:** Seamless real-time auto-translator for Discord (Desktop & Web). Automatically translates incoming chat messages to your native language with ON/OFF toggle. CPU <0.1%.
+> **Zero-Dependency 1-Click Instant Auto-Translator for Discord Desktop & Web Browsers**
+> Automatically translates incoming messages, bot embeds, server rules, and channel topics live inside Discord with 100% typography & style preservation!
 
 ---
 
-## ✨ Ключевые возможности / Key Features
+## 📸 Proof of Work (Before & After Comparison)
 
-| Функция / Feature | Описание (RU) | Description (EN) |
-|---|---|---|
-| **🌐 Auto Translation** | Автоматический перевод входящих сообщений в реальном времени. | Real-time automatic translation of foreign incoming chat messages. |
-| **🌍 Global Auto-Detect** | Автоматически определяет родной язык пользователя (RU, EN, FR, DE, ES, ZH и др.). | Auto-detects user native language (RU, EN, FR, DE, ES, ZH, etc.). |
-| **🔘 ON/OFF Toggle** | Плавающая кнопка переключения перевода в 1 клик. | Floating toggle button for 1-click ON/OFF control. |
-| **🔍 Interactive Badges** | Клик по значку `[RU]` отображает оригинальный текст сообщения. | Click on `[RU]` badge to toggle between original and translated text. |
-| **⚡ 0ms Latency** | Мгновенный вывод из оперативной памяти благодаря пре-кэшированию. | Instant 0ms memory cache rendering. |
-| **🔒 Native Outgoing** | Отправка ваших сообщений работает в 100% родном нативном режиме Discord. | Outgoing message sending remains 100% native with 0 delay. |
+### 🔴 1. Translator Disabled (Original State)
+*Translate toggle set to `OFF`. Discord shows original foreign text (English).*
+
+![Translator OFF](./assets/translator-off.png)
 
 ---
 
-## 📊 Характеристики потребления железа / Hardware Performance
+### 🟢 2. Translator Enabled (Live Russian Translation v8.1)
+*Translate toggle set to `ON`. Message tagged with `[EN ➔ RU]` badge and translated live with 100% font & formatting preservation!*
 
-- ⚡ **CPU (Процессор):** **< 0.05%** (Сканирование DOM занимает всего ~0.02 мс).
-- 💾 **RAM (Память):** **~ 2–4 МБ** (Легкий хэш-словарь фраз в оперативной памяти).
-- 🌐 **Network (Сеть):** Запрос отправляется только для новых сообщений (~1 КБ), повторные выводятся из кэша за 0 мс.
-- 🧹 **Self-Cleaning Cache:** Кэш памяти автоматически очищается при достижении 3000 фраз или перезапуске приложения.
+![Translator ON](./assets/translator-on.png)
 
 ---
 
-## 🚀 Быстрая установка / Quick Installation
+## ⚡ Quick Start Guide (Windows Desktop)
 
-### 🖥️ Вариант 1: Для официального Discord Desktop (Windows)
-
-1. Скачайте файлы репозитория.
-2. Запустите файл **`install.bat`** (двойным кликом).
-3. Откройте приложение Discord на ПК и нажмите **`Ctrl + R`** (для перезагрузки интерфейса).
-4. Вверху справа появится плашка **`🌐 Translate: ON`** — все входящие сообщения переводятся автоматически!
+1. Download or clone this repository.
+2. Double-click **`install.bat`** (1-Click Instant Setup).
+3. Open Discord Desktop — the **`🌐 Translate (➔ RU): ON`** toggle button will appear at the top right header!
 
 ---
 
-### 🌐 Вариант 2: Для браузеров (Chrome / Яндекс Браузер / Edge / Opera)
+## 🗑️ How to Uninstall
 
-1. Откройте в браузере страницу расширений: `chrome://extensions/` или `browser://extensions/`.
-2. Включите **«Режим разработчика»** (тумблер справа вверху).
-3. Нажмите **«Загрузить распакованное расширение»** (Load unpacked).
-4. Укажите папку **`chrome-extension/`** из этого репозитория.
-5. Откройте веб-версию [discord.com/app](https://discord.com/app) — готово!
+1. Double-click **`uninstall.bat`** (1-Click Removal).
+2. Stock Discord core is restored instantly with 0 trace.
 
 ---
 
-## 🛠️ Архитектура проекта / Repository Structure
+## 🚀 Key Features
 
-```text
-discord-translator/
-├── README.md               # Документация и руководство пользователя
-├── install.bat             # Однокликовый инсталлятор для Windows
-├── patchDiscordCore.js     # Нативный авто-сканер и патчер ядра Discord (core.asar)
-├── discordTranslatorVencord.js # Международный плагин перевода с плавающей кнопкой
-├── chrome-extension/       # Браузерное расширение (Manifest V3)
-│   ├── manifest.json
-│   ├── background.js
-│   └── content.js
-└── .gitignore              # Исключения временных файлов
-```
-
----
-
-## 📄 Лицензия / License
-
-Распространяется по свободной лицензии **MIT License**. Свободно для использования и модификации.
+- ⚡ **Zero External Dependencies**: Works out-of-the-box on Windows 10/11 using native PowerShell.
+- 🎨 **100% Format & Font Preservation**: Translates DOM text nodes directly without breaking bold headers, Markdown, code blocks, or links.
+- 🌍 **Multi-Language Detection (100+ Languages)**: Auto-detects `[DE ➔ RU]`, `[FR ➔ RU]`, `[ES ➔ RU]`, `[KO ➔ RU]`, `[PL ➔ RU]`, `[TR ➔ RU]`, `[JA ➔ RU]`, `[ZH ➔ RU]`, `[AR ➔ RU]`, `[EN ➔ RU]`.
+- 👁️ **1-Click Interactive Original Toggle**: Click the language badge `[EN ➔ RU]` to view the original text instantly.
+- 🤖 **Full Bot & Embed Support**: Auto-translates server rules, bot cards, announcements, and embeds.
+- ⚡ **Ultra-Low Memory & CPU**: Consumption <5MB RAM, <0.1% CPU overhead.
+- 🔒 **Zero Security Popup Interference**: Native DOM injection without triggering Windows Hello or Passkey security dialogs.
