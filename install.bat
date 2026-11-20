@@ -1,5 +1,5 @@
 @echo off
-title Discord Auto-Translator Installer
+title Discord Auto-Translator Fresh Installer
 
 echo ====================================================
 echo   Discord Auto-Translator Direct 1-Click Installer

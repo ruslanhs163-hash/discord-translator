@@ -1,5 +1,5 @@
 @echo off
-title Discord Auto-Translator Uninstaller
+title Discord Auto-Translator Fresh Uninstaller
 
 echo ====================================================
 echo   Discord Auto-Translator Direct 1-Click Uninstaller

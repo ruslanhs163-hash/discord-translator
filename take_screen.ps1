@@ -1,13 +1,12 @@
-Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 
-$screen = [System.Windows.Forms.Screen]::PrimaryScreen
-$bounds = $screen.Bounds
-$bitmap = New-Object System.Drawing.Bitmap($bounds.Width, $bounds.Height)
+$screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+$bitmap = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-$graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+$graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
 
-$outputPath = "$env:TEMP\discord_screen.png"
+$outputPath = [System.IO.Path]::Combine($env:TEMP, "discord_screen.png")
 $bitmap.Save($outputPath, [System.Drawing.Imaging.ImageFormat]::Png)
 
 $graphics.Dispose()
